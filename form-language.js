@@ -2,6 +2,7 @@
   const translations = new Map(Object.entries({
     "Estrelas da manha": "Stars of Tomorrow",
     "Voltar": "Back",
+    "← Menu principal": "← Main menu",
     "Formulário de matrícula": "Enrollment form",
     "Preencha os dados abaixo para matricular seu filho na escola de educação infantil Estrelas do Amanhã.": "Fill in the information below to enroll your child at Stars of Tomorrow preschool.",
     "Informações da criança": "Child's information",
@@ -74,22 +75,34 @@
 
   const textOriginals = new WeakMap();
   const attributeOriginals = new WeakMap();
-  const switcher = document.createElement("div");
+  const script = document.currentScript;
+  const homeUrl = script?.dataset.homeUrl;
+  const switcher = document.createElement("nav");
   switcher.className = "language-switcher";
-  switcher.setAttribute("role", "group");
-  const style = document.createElement("style");
-  style.textContent = `.language-switcher{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:9999;display:inline-flex;gap:3px;padding:4px;border:1px solid rgba(32,43,42,.14);border-radius:8px;background:#fbfcfa;box-shadow:0 5px 18px rgba(32,43,42,.14);font:600 12px/1 "Avenir Next",Avenir,"Segoe UI",sans-serif}.language-switcher button{min-width:42px;min-height:36px;padding:0 9px;border:0;border-radius:5px;color:#40504d;background:transparent;font:inherit;cursor:pointer}.language-switcher button[aria-pressed=true]{color:#fff;background:#176b68}.language-switcher button:focus-visible{outline:2px solid #b84d37;outline-offset:2px}`;
-  document.head.append(style);
+  switcher.setAttribute("aria-label", "Idioma / Language");
 
-  for (const [label, language] of [["PT", "pt-BR"], ["EN", "en"]]) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = label;
-    button.dataset.language = language;
-    button.addEventListener("click", () => setLanguage(language, true));
-    switcher.append(button);
+  if (homeUrl) {
+    const homeLink = document.createElement("a");
+    homeLink.href = homeUrl;
+    homeLink.textContent = "← Menu principal";
+    switcher.append(homeLink);
   }
-  document.body.append(switcher);
+
+  const languageSelect = document.createElement("select");
+  languageSelect.setAttribute("aria-label", "Idioma / Language");
+  for (const [value, label] of [["pt-BR", "Português (BR)"], ["en", "English"]]) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    languageSelect.append(option);
+  }
+  languageSelect.addEventListener("change", () => setLanguage(languageSelect.value, true));
+  switcher.append(languageSelect);
+
+  const style = document.createElement("style");
+  style.textContent = `.language-switcher{position:relative;z-index:9999;display:flex;align-items:center;justify-content:flex-end;gap:12px;min-height:60px;padding:8px clamp(16px,4vw,36px);font:600 12px/1 "Avenir Next",Avenir,"Segoe UI",sans-serif}.language-switcher a{display:inline-flex;align-items:center;min-height:38px;padding:0 10px;border:1px solid rgba(32,43,42,.18);border-radius:7px;color:#176b68;background:#fbfcfa;text-decoration:none;white-space:nowrap}.language-switcher a:hover{color:#b84d37;background:#fff}.language-switcher select{min-width:142px;min-height:38px;padding:0 32px 0 12px;border:1px solid rgba(32,43,42,.18);border-radius:7px;color:#202b2a;background-color:#fbfcfa;background-image:linear-gradient(45deg,transparent 50%,#40504d 50%),linear-gradient(135deg,#40504d 50%,transparent 50%);background-position:calc(100% - 13px) 16px,calc(100% - 8px) 16px;background-repeat:no-repeat;background-size:5px 5px,5px 5px;font:inherit;appearance:none;cursor:pointer}.language-switcher select:focus-visible,.language-switcher a:focus-visible{outline:2px solid #b84d37;outline-offset:3px}@media(max-width:420px){.language-switcher{gap:8px;padding-inline:12px}.language-switcher select{min-width:132px;font-size:11px}.language-switcher a{font-size:11px}}`;
+  document.head.append(style);
+  document.body.prepend(switcher);
 
   function setLanguage(language, persist) {
     const english = language === "en";
@@ -127,14 +140,11 @@
       title.textContent = english ? (translations.get(original) || original) : original;
     }
 
-    switcher.setAttribute("aria-label", english ? "Language" : "Idioma / Language");
-    for (const button of switcher.querySelectorAll("button")) {
-      const active = button.dataset.language === language;
-      button.setAttribute("aria-pressed", String(active));
-      button.setAttribute("aria-label", active
-        ? (english ? "English selected" : "Português selecionado")
-        : (english ? "Switch to Portuguese" : "Switch to English"));
-    }
+    switcher.setAttribute("aria-label", english ? "Language and navigation" : "Idioma e navegação");
+    languageSelect.setAttribute("aria-label", english ? "Select language" : "Selecionar idioma");
+    languageSelect.options[0].textContent = "Português (BR)";
+    languageSelect.options[1].textContent = "English";
+    languageSelect.value = language;
 
     if (persist) {
       try {
